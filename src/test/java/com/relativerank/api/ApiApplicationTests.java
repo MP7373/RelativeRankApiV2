@@ -1,23 +1,59 @@
 package com.relativerank.api;
 
 import com.relativerank.api.domain.Show;
+import com.relativerank.api.dto.MalShowDetails;
 import com.relativerank.api.repositories.ShowRepository;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.util.List;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ContextConfiguration(classes = {ApiApplication.class, ApiApplicationTests.TestConfig.class})
+@ActiveProfiles("test")
 class ApiApplicationTests {
+
+	static class TestConfig {
+
+		@Bean
+		public String malUserListUrl() {
+			var baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
+			return baseUrl;
+		}
+	}
+
+	static {
+		var server = new MockWebServer();
+		try {
+			server.start();
+		} catch (IOException e) {
+			throw new RuntimeException();
+		}
+		mockWebServer = server;
+	}
+
+	private static final MockWebServer mockWebServer;
+
+	@AfterAll
+	static void shutDownMockWebServer() throws IOException {
+		mockWebServer.shutdown();
+	}
 
 	@MockBean
 	private ShowRepository showRepository;
@@ -192,5 +228,22 @@ class ApiApplicationTests {
 				.expectStatus().isNotFound()
 				.expectBody(String.class)
 				.value(showResponse -> Assertions.assertEquals("No show found for id: " + showId, showResponse));
+	}
+
+	@Test
+	void importFromMalEndpoint_ReturnsUsersMalList() {
+		mockWebServer.enqueue(new MockResponse().setBody(TestConstants.onePageMalListJsonString)
+				.addHeader("Content-Type", "application/json"));
+		mockWebServer.enqueue(new MockResponse().setBody("[]")
+				.addHeader("Content-Type", "application/json"));
+
+		webTestClient.get()
+				.uri("/import-from-mal?username=MP7373")
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody(new ParameterizedTypeReference<List<MalShowDetails>>() {})
+				.value(showsResponse -> {
+					Assertions.assertEquals(243, showsResponse.size());
+				});
 	}
 }

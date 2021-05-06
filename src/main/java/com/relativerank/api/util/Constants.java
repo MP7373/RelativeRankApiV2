@@ -10,6 +10,6 @@ public class Constants {
 
     private Constants() {}
 
-    public static final Function<String, Mono<ServerResponse>> SHOW_NOT_FOUND_RESPONSE_CREATOR = showId ->
+    public static final Function<String, Mono<ServerResponse>> showNotFoundResponseCreator = showId ->
             ServerResponse.status(HttpStatus.NOT_FOUND).body(Mono.just("No show found for id: " + showId), String.class);
 }

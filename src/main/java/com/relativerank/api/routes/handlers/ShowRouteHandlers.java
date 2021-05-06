@@ -1,7 +1,7 @@
 package com.relativerank.api.routes.handlers;
 
 import com.relativerank.api.domain.Show;
-import com.relativerank.api.dto.MalUserShowListResponse;
+import com.relativerank.api.dto.MalShowDetails;
 import com.relativerank.api.dto.ShowRequest;
 import com.relativerank.api.repositories.ShowRepository;
 import com.relativerank.api.util.Constants;
@@ -18,11 +18,12 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
-public record ShowRouteHandlers(ShowRepository showRepository, WebClient webClient) {
+public record ShowRouteHandlers(ShowRepository showRepository,
+                                WebClient webClient,
+                                String malUserListUrl) {
 
     public Mono<ServerResponse> getAllShows(ServerRequest serverRequest) {
         return ServerResponse.ok()
@@ -35,7 +36,7 @@ public record ShowRouteHandlers(ShowRepository showRepository, WebClient webClie
         return showRepository.findById(showId)
                 .flatMap(show -> ServerResponse.ok()
                         .body(BodyInserters.fromPublisher(showRepository.findById(showId), Show.class)))
-                .switchIfEmpty(Constants.SHOW_NOT_FOUND_RESPONSE_CREATOR.apply(showId));
+                .switchIfEmpty(Constants.showNotFoundResponseCreator.apply(showId));
     }
 
     public Mono<ServerResponse> createShow(ServerRequest serverRequest) {
@@ -76,11 +77,11 @@ public record ShowRouteHandlers(ShowRepository showRepository, WebClient webClie
                 .flatMap(existingShow -> showRepository.delete(existingShow).thenReturn(existingShow))
                 .flatMap(deletedShow ->  ServerResponse.ok()
                         .body(Mono.just("Show with id: " + deletedShow.id() + " and name: " + deletedShow.name() + " was deleted"), String.class))
-                .switchIfEmpty(Constants.SHOW_NOT_FOUND_RESPONSE_CREATOR.apply(showId));
+                .switchIfEmpty(Constants.showNotFoundResponseCreator.apply(showId));
     }
 
     public Mono<ServerResponse> importFromMal(ServerRequest serverRequest) {
-        String malUsername = serverRequest.queryParam("username").orElse(null);
+        var malUsername = serverRequest.queryParam("username").orElse(null);
         if (malUsername == null) {
             return ServerResponse.badRequest().body("Query parameter username is required", String.class);
         }
@@ -90,12 +91,11 @@ public record ShowRouteHandlers(ShowRepository showRepository, WebClient webClie
                         .body(Mono.just(malUserShowListResponse), new ParameterizedTypeReference<>() {}));
     }
 
-    private Mono<List<MalUserShowListResponse>> recursivelyGetAllShowsOfUsersMalList(String malUsername, int showOffset, List<MalUserShowListResponse> malList) {
-        String malListUrl = "https://myanimelist.net/animelist/%s/load.json?offset=%sstatus=2";
-        String urlWithParams = String.format(malListUrl, malUsername, showOffset);
+    private Mono<List<MalShowDetails>> recursivelyGetAllShowsOfUsersMalList(String malUsername, int showOffset, List<MalShowDetails> malList) {
+        var urlWithParams = String.format(malUserListUrl, malUsername, showOffset);
         return webClient.get()
                 .uri(urlWithParams)
-                .exchangeToMono(clientResponse -> clientResponse.bodyToMono(new ParameterizedTypeReference<List<MalUserShowListResponse>>() {}))
+                .exchangeToMono(clientResponse -> clientResponse.bodyToMono(new ParameterizedTypeReference<List<MalShowDetails>>() {}))
                 .flatMap(newMalListPage -> {
                     if (newMalListPage.size() > 0) {
                         malList.addAll(newMalListPage.stream()
