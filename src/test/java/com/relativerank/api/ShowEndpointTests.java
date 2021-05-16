@@ -2,64 +2,19 @@ package com.relativerank.api;
 
 import com.relativerank.api.domain.Show;
 import com.relativerank.api.dto.MalShowDetails;
-import com.relativerank.api.repositories.ShowRepository;
+import com.relativerank.api.dto.ProblemDetails;
 import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.List;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = {ApiApplication.class, ApiApplicationTests.TestConfig.class})
-@ActiveProfiles("test")
-class ApiApplicationTests {
-
-	static class TestConfig {
-
-		@Bean
-		public String malUserListUrl() {
-			var baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
-			return baseUrl;
-		}
-	}
-
-	static {
-		var server = new MockWebServer();
-		try {
-			server.start();
-		} catch (IOException e) {
-			throw new RuntimeException();
-		}
-		mockWebServer = server;
-	}
-
-	private static final MockWebServer mockWebServer;
-
-	@AfterAll
-	static void shutDownMockWebServer() throws IOException {
-		mockWebServer.shutdown();
-	}
-
-	@MockBean
-	private ShowRepository showRepository;
-
-	@Autowired
-	private WebTestClient webTestClient;
+class ShowEndpointTests extends EndpointTestsBase {
 
 	@Test
 	void getAllShowsEndpoint_Returns200_OkStatus_WithResponseBodyContainingArrayOfAllShows() {
@@ -111,15 +66,17 @@ class ApiApplicationTests {
 	}
 
 	@Test
-	void createShowEndpoint_WhenShowWithSameNameDoesNotExist_Returns201_CreatedStatus_WithResponseBodyContainingShow() {
+	void createShowEndpoint_WhenUserIsAdmin_WhenShowWithSameNameDoesNotExist_Returns201_CreatedStatus_WithResponseBodyContainingShow() {
 		var show = new Show(null, "Shingeki no Kyojin");
 		var createdShow = new Show("id", show.name());
 
 		Mockito.when(showRepository.findByName(show.name())).thenReturn(Mono.empty());
 		Mockito.when(showRepository.save(show)).thenReturn(Mono.just(createdShow));
 
+		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.post()
 				.uri("/shows")
+				.header("Authorization", "Bearer " + adminJwt)
 				.body(Mono.just(show), Show.class)
 				.exchange()
 				.expectStatus().isCreated()
@@ -128,14 +85,16 @@ class ApiApplicationTests {
 	}
 
 	@Test
-	void createShowEndpoint_WhenShowWithSameNameAlreadyExists_Returns409_ConflictStatus_WithResponseBodySayingShowAlreadyExistsWithName() {
+	void createShowEndpoint_WhenUserIsAdmin_WhenShowWithSameNameAlreadyExists_Returns409_ConflictStatus_WithResponseBodySayingShowAlreadyExistsWithName() {
 		var show = new Show(null, "Shingeki no Kyojin");
 		var existingShow = new Show("id", show.name());
 
 		Mockito.when(showRepository.findByName(show.name())).thenReturn(Mono.just(existingShow));
 
+		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.post()
 				.uri("/shows")
+				.header("Authorization", "Bearer " + adminJwt)
 				.body(Mono.just(show), Show.class)
 				.exchange()
 				.expectStatus().value(status -> Assertions.assertEquals(HttpStatus.CONFLICT.value(), status))
@@ -144,7 +103,7 @@ class ApiApplicationTests {
 	}
 
 	@Test
-	void upsertShowEndpoint_WhenShowWithSameIdAlreadyExists_Returns200_OkStatus_WithResponseBodyContainingUpdatedShow() {
+	void upsertShowEndpoint_WhenUserIsAdmin_WhenShowWithSameIdAlreadyExists_Returns200_OkStatus_WithResponseBodyContainingUpdatedShow() {
 		var showId = "id";
 		var updatedShow = new Show(showId, "Shingeki no Kyojin");
 		var existingShow = new Show(showId, "Shingeki no Kyojiin Typo Name");
@@ -152,8 +111,10 @@ class ApiApplicationTests {
 		Mockito.when(showRepository.findById(showId)).thenReturn(Mono.just(existingShow));
 		Mockito.when(showRepository.save(updatedShow)).thenReturn(Mono.just(updatedShow));
 
+		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.put()
 				.uri("/shows/" + showId)
+				.header("Authorization", "Bearer " + adminJwt)
 				.body(Mono.just(updatedShow), Show.class)
 				.exchange()
 				.expectStatus().isOk()
@@ -162,7 +123,7 @@ class ApiApplicationTests {
 	}
 
 	@Test
-	void upsertShowEndpoint_WhenShowWithSameIdDoesNotExist_AndShowWithSameNameDoesNotExist_Returns201_CreatedStatus_WithResponseBodyContainingCreatedShow() {
+	void upsertShowEndpoint_WhenUserIsAdmin_WhenShowWithSameIdDoesNotExist_AndShowWithSameNameDoesNotExist_Returns201_CreatedStatus_WithResponseBodyContainingCreatedShow() {
 		var showId = "id";
 		var show = new Show(showId, "Shingeki no Kyojin");
 
@@ -170,8 +131,10 @@ class ApiApplicationTests {
 		Mockito.when(showRepository.findByName(show.name())).thenReturn(Mono.empty());
 		Mockito.when(showRepository.save(show)).thenReturn(Mono.just(show));
 
+		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.put()
 				.uri("/shows/" + showId)
+				.header("Authorization", "Bearer " + adminJwt)
 				.body(Mono.just(show), Show.class)
 				.exchange()
 				.expectStatus().isCreated()
@@ -180,7 +143,7 @@ class ApiApplicationTests {
 	}
 
 	@Test
-	void upsertShowEndpoint_WhenShowWithSameIdDoesNotExist_AndShowWithSameNameAlreadyExists_Returns409_ConflictStatus_WithResponseBodySayingShowAlreadyExistsWithName() {
+	void upsertShowEndpoint_WhenUserIsAdmin_WhenShowWithSameIdDoesNotExist_AndShowWithSameNameAlreadyExists_Returns409_ConflictStatus_WithResponseBodySayingShowAlreadyExistsWithName() {
 		var showName = "Shingeki no Kyojin";
 		var showId = "id";
 		var newShow = new Show(showId, showName);
@@ -190,8 +153,10 @@ class ApiApplicationTests {
 		Mockito.when(showRepository.findById(showId)).thenReturn(Mono.empty());
 		Mockito.when(showRepository.findByName(newShow.name())).thenReturn(Mono.just(existingShow));
 
+		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.put()
 				.uri("/shows/" + showId)
+				.header("Authorization", "Bearer " + adminJwt)
 				.body(Mono.just(newShow), Show.class)
 				.exchange()
 				.expectStatus().value(status -> Assertions.assertEquals(HttpStatus.CONFLICT.value(), status))
@@ -200,15 +165,17 @@ class ApiApplicationTests {
 	}
 
 	@Test
-	void deleteShowEndpoint_WhenShowExistsForId_Returns200_OkStatus_WithResponseBodySayingShowWasDeleted() {
+	void deleteShowEndpoint_WhenUserIsAdmin_WhenShowExistsForId_Returns200_OkStatus_WithResponseBodySayingShowWasDeleted() {
 		var showId = "id";
 		var show = new Show(showId, "Shingeki no Kyojin");
 
 		Mockito.when(showRepository.findById(showId)).thenReturn(Mono.just(show));
 		Mockito.when(showRepository.delete(show)).thenReturn(Mono.empty());
 
+		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.delete()
 				.uri("/shows/" + showId)
+				.header("Authorization", "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isOk()
 				.expectBody(String.class)
@@ -216,14 +183,16 @@ class ApiApplicationTests {
 	}
 
 	@Test
-	void deleteShowEndpoint_WhenShowDoesNotExistForId_Returns404_NotFoundStatus_WithResponseBodySayingShowNotFoundForId() {
+	void deleteShowEndpoint_WhenUserIsAdmin_WhenShowDoesNotExistForId_Returns404_NotFoundStatus_WithResponseBodySayingShowNotFoundForId() {
 		var showId = "id";
 		var show = new Show(showId, "Shingeki no Kyojin");
 
 		Mockito.when(showRepository.findById(showId)).thenReturn(Mono.empty());
 
+		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.delete()
 				.uri("/shows/" + showId)
+				.header("Authorization", "Bearer " + adminJwt)
 				.exchange()
 				.expectStatus().isNotFound()
 				.expectBody(String.class)
@@ -244,6 +213,23 @@ class ApiApplicationTests {
 				.expectBody(new ParameterizedTypeReference<List<MalShowDetails>>() {})
 				.value(showsResponse -> {
 					Assertions.assertEquals(243, showsResponse.size());
+				});
+	}
+
+	@Test
+	void importFromMalEndpoint_WhenNotPassedUsernameQueryParam_Returns404_NotFoundStatus_WithResponseBodySayingUsernameQueryParamRequired() {
+		mockWebServer.enqueue(new MockResponse().setBody(TestConstants.onePageMalListJsonString)
+				.addHeader("Content-Type", "application/json"));
+		mockWebServer.enqueue(new MockResponse().setBody("[]")
+				.addHeader("Content-Type", "application/json"));
+
+		webTestClient.get()
+				.uri("/import-from-mal")
+				.exchange()
+				.expectStatus().isBadRequest()
+				.expectBody(ProblemDetails.class)
+				.value(problemDetails -> {
+					Assertions.assertEquals("Query parameter username is required", problemDetails.detail());
 				});
 	}
 }

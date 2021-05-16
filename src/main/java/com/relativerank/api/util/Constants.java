@@ -10,6 +10,8 @@ public class Constants {
 
     private Constants() {}
 
-    public static final Function<String, Mono<ServerResponse>> showNotFoundResponseCreator = showId ->
+    public static final Function<String, Mono<ServerResponse>> SHOW_NOT_FOUND_RESPONSE_CREATOR = showId ->
             ServerResponse.status(HttpStatus.NOT_FOUND).body(Mono.just("No show found for id: " + showId), String.class);
+
+    public static final String HMAC_SHA_512 = "HmacSHA512";
 }
