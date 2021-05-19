@@ -28,6 +28,7 @@ public class Routes {
                 .DELETE("/shows/{id}", showRouteHandlers::deleteShow)
                 .GET("/import-from-mal", showRouteHandlers::importFromMal)
                 .GET("show-lists/{username}", showListRouteHandlers::getShowList)
+                .PUT("show-lists/{username}", showListRouteHandlers::upsertShowList)
                 .build();
     }
 }

@@ -1,12 +1,13 @@
 package com.relativerank.api.routes.handlers;
 
-import com.relativerank.api.domain.Show;
+import com.relativerank.api.db.Show;
 import com.relativerank.api.dto.MalShowDetails;
 import com.relativerank.api.dto.ProblemDetails;
 import com.relativerank.api.dto.ShowRequest;
 import com.relativerank.api.repositories.ShowRepository;
 import com.relativerank.api.util.Constants;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -47,22 +48,22 @@ public record ShowRouteHandlers(ShowRepository showRepository,
     @NonNull
     public Mono<ServerResponse> createShow(ServerRequest serverRequest) {
         var showFromBody = serverRequest.body(BodyExtractors.toMono(ShowRequest.class))
-                .map(show -> new Show(null, show.name()))
-                .cache();
+                .map(show -> new Show(null, show.name()));
 
-        return createShow(showFromBody);
+        return showFromBody.flatMap(this::createShow);
     }
 
     @NonNull
-    private Mono<ServerResponse> createShow(Mono<Show> showMono) {
-        return showMono
-                .flatMap(show -> showRepository.findByName(show.name()))
-                .flatMap(existingShow -> ServerResponse.status(HttpStatus.CONFLICT)
-                        .body(Mono.just("A show already exists with the name " + existingShow.name()), String.class))
-                .switchIfEmpty(showMono
-                        .flatMap(showRepository::save)
-                        .flatMap(savedShow -> ServerResponse.created(URI.create("/show/" + savedShow.id()))
-                                .body(BodyInserters.fromValue(savedShow))));
+    private Mono<ServerResponse> createShow(Show show) {
+        return showRepository.save(show)
+                .flatMap(savedShow -> ServerResponse.created(URI.create("/show/" + savedShow.id()))
+                        .body(BodyInserters.fromValue(savedShow)))
+                .onErrorResume(DuplicateKeyException.class, error -> ServerResponse.status(HttpStatus.CONFLICT)
+                        .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                        .body(BodyInserters.fromValue(new ProblemDetails(
+                                "conflict",
+                                "409",
+                                "A show already exists with the name " + show.name()))));
     }
 
     @NonNull
@@ -75,7 +76,7 @@ public record ShowRouteHandlers(ShowRepository showRepository,
         return showRepository.findById(showId)
                 .flatMap(existingShow -> showFromBody.flatMap(showRepository::save))
                 .flatMap(savedShow -> ServerResponse.ok().body(BodyInserters.fromValue(savedShow)))
-                .switchIfEmpty(createShow(showFromBody));
+                .switchIfEmpty(showFromBody.flatMap(this::createShow));
     }
 
     @NonNull

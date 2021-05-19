@@ -15,10 +15,9 @@ public record JwtAuthenticationManager(JwtEncoder jwtEncoder) implements Reactiv
     public Mono<Authentication> authenticate(Authentication authentication) {
         try {
             if (authentication instanceof JwtAuthentication jwtAuthentication) {
-                var decodedJwt = jwtEncoder.decodeJwt(jwtAuthentication.getJwt());
+                var decodedJwt = jwtAuthentication.getJwt();
 
                 var username = decodedJwt.getSubject();
-                jwtAuthentication.setPrincipal(username);
 
                 var authorities = decodedJwt.getClaims()
                         .get("ROLES")

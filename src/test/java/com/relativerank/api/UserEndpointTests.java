@@ -1,6 +1,6 @@
 package com.relativerank.api;
 
-import com.relativerank.api.domain.User;
+import com.relativerank.api.db.User;
 import com.relativerank.api.dto.DeleteUserRequest;
 import com.relativerank.api.dto.ProblemDetails;
 import com.relativerank.api.dto.UserAuthenticationResponse;

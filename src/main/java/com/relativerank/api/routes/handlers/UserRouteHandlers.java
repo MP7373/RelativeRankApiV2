@@ -1,6 +1,6 @@
 package com.relativerank.api.routes.handlers;
 
-import com.relativerank.api.domain.User;
+import com.relativerank.api.db.User;
 import com.relativerank.api.dto.ProblemDetails;
 import com.relativerank.api.dto.UserAuthenticationResponse;
 import com.relativerank.api.dto.UsernamePassword;

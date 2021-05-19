@@ -9,8 +9,8 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Component
-public record JwtServerSecurityContextRepository(ReactiveAuthenticationManager authenticationManager)
-        implements ServerSecurityContextRepository {
+public record JwtServerSecurityContextRepository(ReactiveAuthenticationManager authenticationManager,
+                                                 JwtEncoder jwtEncoder) implements ServerSecurityContextRepository {
 
     @Override
     public Mono<Void> save(ServerWebExchange serverWebExchange, SecurityContext securityContext) {
@@ -22,7 +22,9 @@ public record JwtServerSecurityContextRepository(ReactiveAuthenticationManager a
         var authHeaders = serverWebExchange.getRequest().getHeaders().get("Authorization");
         if (authHeaders != null && authHeaders.size() > 0) {
             var jwt = authHeaders.get(0).substring(7);
-            return authenticationManager.authenticate(new JwtAuthentication(jwt))
+            var decodedJwt = jwtEncoder.decodeJwt(jwt);
+
+            return authenticationManager.authenticate(new JwtAuthentication(decodedJwt))
                     .map(SecurityContextImpl::new);
         }
 

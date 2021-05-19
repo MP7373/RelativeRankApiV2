@@ -1,5 +1,6 @@
 package com.relativerank.api;
 
+import com.relativerank.api.repositories.ShowListRepository;
 import com.relativerank.api.repositories.ShowRepository;
 import com.relativerank.api.repositories.UserRepository;
 import com.relativerank.api.security.HmacSha512PasswordEncoder;
@@ -55,6 +56,9 @@ public class EndpointTestsBase {
 
     @MockBean
     protected UserRepository userRepository;
+
+    @MockBean
+    protected ShowListRepository showListRepository;
 
     @Autowired
     protected JwtEncoder jwtEncoder;

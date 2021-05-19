@@ -36,7 +36,7 @@ public class JwtEncoder {
         }
 
         return jwtBuilder.withIssuer("relativerank.com")
-                .withExpiresAt(Date.from(Instant.now().plus(15, ChronoUnit.MINUTES)))
+                .withExpiresAt(Date.from(Instant.now().plus(7, ChronoUnit.DAYS)))
                 .withSubject(username)
                 .withArrayClaim("ROLES", roles.toArray(new String[] {}))
 

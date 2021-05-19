@@ -1,5 +1,6 @@
 package com.relativerank.api.security;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -7,7 +8,7 @@ import java.util.Collection;
 
 public class JwtAuthentication implements Authentication {
 
-    private final String jwt;
+    private final DecodedJWT jwt;
 
     private Collection<? extends GrantedAuthority> authorities;
 
@@ -15,11 +16,11 @@ public class JwtAuthentication implements Authentication {
 
     private boolean authenticated;
 
-    public JwtAuthentication(String jwt) {
+    public JwtAuthentication(DecodedJWT jwt) {
         this.jwt = jwt;
     }
 
-    public String getJwt() {
+    public DecodedJWT getJwt() {
         return jwt;
     }
 
@@ -44,11 +45,7 @@ public class JwtAuthentication implements Authentication {
 
     @Override
     public Object getPrincipal() {
-        return principal;
-    }
-
-    public void setPrincipal(Object principal) {
-        this.principal = principal;
+        return jwt != null ? jwt.getSubject() : null;
     }
 
     @Override

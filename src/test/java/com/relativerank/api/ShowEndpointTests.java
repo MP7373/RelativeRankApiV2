@@ -1,13 +1,15 @@
 package com.relativerank.api;
 
-import com.relativerank.api.domain.Show;
+import com.relativerank.api.db.Show;
 import com.relativerank.api.dto.MalShowDetails;
 import com.relativerank.api.dto.ProblemDetails;
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -89,7 +91,8 @@ class ShowEndpointTests extends EndpointTestsBase {
 		var show = new Show(null, "Shingeki no Kyojin");
 		var existingShow = new Show("id", show.name());
 
-		Mockito.when(showRepository.findByName(show.name())).thenReturn(Mono.just(existingShow));
+		Mockito.when(showRepository.save(ArgumentMatchers.any()))
+				.thenReturn(Mono.error(new DuplicateKeyException("duplicate")));
 
 		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.post()
@@ -98,8 +101,12 @@ class ShowEndpointTests extends EndpointTestsBase {
 				.body(Mono.just(show), Show.class)
 				.exchange()
 				.expectStatus().value(status -> Assertions.assertEquals(HttpStatus.CONFLICT.value(), status))
-				.expectBody(String.class)
-				.value(body -> Assertions.assertEquals("A show already exists with the name " + show.name(), body));
+				.expectBody(ProblemDetails.class)
+				.value(body -> {
+					Assertions.assertEquals("conflict", body.title());
+					Assertions.assertEquals("409", body.status());
+					Assertions.assertEquals("A show already exists with the name " + show.name(), body.detail());
+				});
 	}
 
 	@Test
@@ -151,7 +158,8 @@ class ShowEndpointTests extends EndpointTestsBase {
 		var existingShow = new Show(existingShowId, showName);
 
 		Mockito.when(showRepository.findById(showId)).thenReturn(Mono.empty());
-		Mockito.when(showRepository.findByName(newShow.name())).thenReturn(Mono.just(existingShow));
+		Mockito.when(showRepository.save(ArgumentMatchers.any()))
+				.thenReturn(Mono.error(new DuplicateKeyException("duplicate")));
 
 		var adminJwt = jwtEncoder.encodeUserJwt(adminUsername);
 		webTestClient.put()
@@ -160,8 +168,12 @@ class ShowEndpointTests extends EndpointTestsBase {
 				.body(Mono.just(newShow), Show.class)
 				.exchange()
 				.expectStatus().value(status -> Assertions.assertEquals(HttpStatus.CONFLICT.value(), status))
-				.expectBody(String.class)
-				.value(body -> Assertions.assertEquals("A show already exists with the name " + newShow.name(), body));
+				.expectBody(ProblemDetails.class)
+				.value(body -> {
+					Assertions.assertEquals("conflict", body.title());
+					Assertions.assertEquals("409", body.status());
+					Assertions.assertEquals("A show already exists with the name " + showName, body.detail());
+				});
 	}
 
 	@Test

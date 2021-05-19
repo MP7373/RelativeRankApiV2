@@ -1,6 +1,6 @@
 package com.relativerank.api.repositories;
 
-import com.relativerank.api.domain.User;
+import com.relativerank.api.db.User;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Mono;

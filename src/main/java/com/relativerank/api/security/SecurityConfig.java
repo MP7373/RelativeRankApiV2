@@ -40,7 +40,8 @@ public class SecurityConfig {
                 .pathMatchers(HttpMethod.PUT, "/shows/{id}").hasRole("ADMIN")
                 .pathMatchers(HttpMethod.DELETE, "/shows/{id}").hasRole("ADMIN")
                 .pathMatchers(HttpMethod.GET, "/import-from-mal").permitAll()
-                .anyExchange().authenticated()
+                .pathMatchers(HttpMethod.GET, "/show-lists/{username}").permitAll()
+                .pathMatchers(HttpMethod.PUT, "/show-lists/{username}").access(AuthHandlers.jwtUsernameMatchesPathUserName)
                 .and()
                 .build();
     }

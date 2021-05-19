@@ -1,12 +1,12 @@
 package com.relativerank.api.repositories;
 
-import com.relativerank.api.db.Show;
+import com.relativerank.api.db.ShowList;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Mono;
 
 @Profile("!test")
-public interface ShowRepository extends ReactiveMongoRepository<Show, String> {
+public interface ShowListRepository extends ReactiveMongoRepository<ShowList, String> {
 
-    Mono<Show> findByName(String name);
+    Mono<ShowList> findByUsername(String username);
 }
