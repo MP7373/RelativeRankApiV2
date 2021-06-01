@@ -8,6 +8,12 @@ import com.relativerank.api.repositories.ShowRepository;
 import com.relativerank.api.util.Constants;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.index.TextIndexDefinition;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.TextCriteria;
+import org.springframework.data.mongodb.core.query.TextQuery;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -17,6 +23,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -27,12 +34,30 @@ import java.util.stream.Collectors;
 @Component
 public record ShowRouteHandlers(ShowRepository showRepository,
                                 WebClient webClient,
+                                ReactiveMongoTemplate reactiveMongoTemplate,
                                 String malUserListUrl) {
 
     @NonNull
     public Mono<ServerResponse> getAllShows(ServerRequest serverRequest) {
+        var showName = serverRequest.queryParam("show-name").orElse(null);
+        if (showName != null) {
+            return searchShow(showName);
+        }
+
         return ServerResponse.ok()
                 .body(BodyInserters.fromPublisher(showRepository.findAll(), Show.class));
+    }
+
+    @NonNull
+    private Mono<ServerResponse> searchShow(String showName) {
+        TextIndexDefinition textIndex = new TextIndexDefinition.TextIndexDefinitionBuilder()
+                .onField("name")
+                .build();
+        TextCriteria criteria = TextCriteria.forDefaultLanguage().matching(showName);
+        Query query = TextQuery.queryText(criteria).with(PageRequest.of(0, 10));
+        Flux<Show> shows = reactiveMongoTemplate.find(query, Show.class);
+
+        return ServerResponse.ok().body(BodyInserters.fromPublisher(shows, Show.class));
     }
 
     @NonNull

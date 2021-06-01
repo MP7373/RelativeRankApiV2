@@ -39,6 +39,24 @@ class ShowEndpointTests extends EndpointTestsBase {
 	}
 
 	@Test
+	void getAllShowsEndpoint_WhenShowNameQueryParamIsIncluded_Returns200_OkStatus_WithResponseBodyContainingMatchingShows() {
+		var show = new Show(null, "Shingeki no Kyojin");
+
+		Mockito.when(reactiveMongoTemplate.find(ArgumentMatchers.any(), ArgumentMatchers.any()))
+				.thenReturn(Flux.just(show));
+
+		webTestClient.get()
+				.uri("/shows?show-name=shingeki")
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody(new ParameterizedTypeReference<List<Show>>() {})
+				.value(showsResponse -> {
+					Assertions.assertEquals(1, showsResponse.size());
+					Assertions.assertEquals(show, showsResponse.get(0));
+				});
+	}
+
+	@Test
 	void getShowEndpoint_WhenShowExistsForId_Returns200_OkStatus_WithResponseBodyContainingShow() {
 		var showId = "id";
 		var show = new Show(showId, "Shingeki no Kyojin");

@@ -33,7 +33,7 @@ public record ShowList(String id,
                 throw new IllegalArgumentException("show rank at index: " + i + " was not expected value " + (i + 1));
             }
 
-            var expectedPercentileRank = 1 - (1 / (1 + showList.size()) * (i + 1));
+            var expectedPercentileRank = 1 - (1.0 / (1 + showList.size()) * (i + 1));
             if (Math.abs(rankedShow.percentileRank() - expectedPercentileRank) > .01) {
                 throw new IllegalArgumentException(
                         "show percentile rank at index: " + i + " was not expected value " + expectedPercentileRank);

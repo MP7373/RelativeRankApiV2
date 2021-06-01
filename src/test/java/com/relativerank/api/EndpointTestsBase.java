@@ -1,5 +1,6 @@
 package com.relativerank.api;
 
+import com.relativerank.api.repositories.GlobalRankedShowListRepository;
 import com.relativerank.api.repositories.ShowListRepository;
 import com.relativerank.api.repositories.ShowRepository;
 import com.relativerank.api.repositories.UserRepository;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -52,6 +54,9 @@ public class EndpointTestsBase {
     protected WebTestClient webTestClient;
 
     @MockBean
+    protected ReactiveMongoTemplate reactiveMongoTemplate;
+
+    @MockBean
     protected ShowRepository showRepository;
 
     @MockBean
@@ -59,6 +64,9 @@ public class EndpointTestsBase {
 
     @MockBean
     protected ShowListRepository showListRepository;
+
+    @MockBean
+    protected GlobalRankedShowListRepository globalRankedShowListRepository;
 
     @Autowired
     protected JwtEncoder jwtEncoder;
