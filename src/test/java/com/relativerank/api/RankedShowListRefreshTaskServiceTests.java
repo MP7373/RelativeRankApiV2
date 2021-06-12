@@ -1,5 +1,6 @@
 package com.relativerank.api;
 
+import com.relativerank.api.db.GlobalRankedShowList;
 import com.relativerank.api.db.RankedShow;
 import com.relativerank.api.db.Show;
 import com.relativerank.api.db.ShowList;
@@ -34,6 +35,13 @@ public class RankedShowListRefreshTaskServiceTests {
 
         var eva = new Show("id", "Eva");
         Mockito.when(showRepository.findByName(evaRanked.name())).thenReturn(Mono.just(eva));
+
+        var globalRankedShowList = new GlobalRankedShowList(
+                "1",
+                1,
+                userShowList.showList());
+        Mockito.when(globalRankedShowListRepository.save(ArgumentMatchers.any()))
+                .thenReturn(Mono.just(globalRankedShowList));
 
         showListRefreshService.refreshRankedShowList();
 

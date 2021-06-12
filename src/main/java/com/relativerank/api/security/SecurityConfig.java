@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .pathMatchers(HttpMethod.GET, "/import-from-mal").permitAll()
                 .pathMatchers(HttpMethod.GET, "/show-lists/{username}").permitAll()
                 .pathMatchers(HttpMethod.PUT, "/show-lists/{username}").access(AuthHandlers.jwtUsernameMatchesPathUserName)
+                .pathMatchers(HttpMethod.GET, "/global-ranked-show-list/{page}").permitAll()
                 .and()
                 .build();
     }

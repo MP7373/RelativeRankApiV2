@@ -1,5 +1,6 @@
 package com.relativerank.api.routes;
 
+import com.relativerank.api.routes.handlers.GlobalRankedShowListRouteHandlers;
 import com.relativerank.api.routes.handlers.ShowListRouteHandlers;
 import com.relativerank.api.routes.handlers.ShowRouteHandlers;
 import com.relativerank.api.routes.handlers.UserRouteHandlers;
@@ -15,7 +16,8 @@ public class Routes {
     @Bean
     RouterFunction<ServerResponse> apiRoutes(UserRouteHandlers userRouteHandlers,
                                              ShowRouteHandlers showRouteHandlers,
-                                             ShowListRouteHandlers showListRouteHandlers) {
+                                             ShowListRouteHandlers showListRouteHandlers,
+                                             GlobalRankedShowListRouteHandlers globalRankedShowListRouteHandlers) {
         return RouterFunctions.route()
                 .POST("/login", userRouteHandlers::login)
                 .POST("/users", userRouteHandlers::createUser)
@@ -29,6 +31,7 @@ public class Routes {
                 .GET("/import-from-mal", showRouteHandlers::importFromMal)
                 .GET("show-lists/{username}", showListRouteHandlers::getShowList)
                 .PUT("show-lists/{username}", showListRouteHandlers::upsertShowList)
+                .GET("/global-ranked-show-list/{page}", globalRankedShowListRouteHandlers::getGlobalRankedShowList)
                 .build();
     }
 }
