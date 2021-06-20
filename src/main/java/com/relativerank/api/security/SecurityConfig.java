@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(serverSecurityContextRepository)
                 .authorizeExchange()
+                .pathMatchers(HttpMethod.GET, "/migrate").permitAll()
                 .pathMatchers(HttpMethod.POST, "/login").permitAll()
                 .pathMatchers(HttpMethod.POST, "/users").permitAll()
                 .pathMatchers(HttpMethod.PATCH, "/users/{username}").hasRole("ADMIN")
