@@ -2,7 +2,6 @@ package com.relativerank.api;
 
 import com.relativerank.api.db.GlobalRankedShowList;
 import com.relativerank.api.db.RankedShow;
-import com.relativerank.api.db.Show;
 import com.relativerank.api.dto.ProblemDetails;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

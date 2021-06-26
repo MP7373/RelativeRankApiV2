@@ -1,5 +1,6 @@
 package com.relativerank.api.routes.handlers;
 
+import com.relativerank.api.db.RankedShow;
 import com.relativerank.api.db.Show;
 import com.relativerank.api.dto.MalShowDetails;
 import com.relativerank.api.dto.ProblemDetails;
@@ -29,6 +30,7 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Component
@@ -131,7 +133,7 @@ public record ShowRouteHandlers(ShowRepository showRepository,
                         .body(Mono.just(malUserShowListResponse), new ParameterizedTypeReference<>() {}));
     }
 
-    private Mono<List<MalShowDetails>> recursivelyGetAllShowsOfUsersMalList(String malUsername, int showOffset, List<MalShowDetails> malList) {
+    private Mono<List<RankedShow>> recursivelyGetAllShowsOfUsersMalList(String malUsername, int showOffset, List<MalShowDetails> malList) {
         var urlWithParams = String.format(malUserListUrl, malUsername, showOffset);
         return webClient.get()
                 .uri(urlWithParams)
@@ -145,7 +147,18 @@ public record ShowRouteHandlers(ShowRepository showRepository,
                         return recursivelyGetAllShowsOfUsersMalList(malUsername, showOffset + 300, malList);
                     }
 
-                    return Mono.just(malList);
+                    malList.sort((a, b) -> b.score() - a.score());
+
+                    var numberOfShows = malList.size();
+                    var rankCounter = new AtomicInteger(0);
+                    var rankedList = malList.stream()
+                            .map(malShow -> {
+                                var rank = rankCounter.incrementAndGet();
+                                var percentileRank = 1.0 - (double) rank / (numberOfShows + 1);
+                                return new RankedShow(malShow.anime_title(), rank, percentileRank);
+                            })
+                            .collect(Collectors.toList());
+                    return Mono.just(rankedList);
                 });
     }
 }

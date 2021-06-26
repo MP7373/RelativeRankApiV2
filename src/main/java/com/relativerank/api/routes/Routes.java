@@ -1,6 +1,9 @@
 package com.relativerank.api.routes;
 
-import com.relativerank.api.routes.handlers.*;
+import com.relativerank.api.routes.handlers.GlobalRankedShowListRouteHandlers;
+import com.relativerank.api.routes.handlers.ShowListRouteHandlers;
+import com.relativerank.api.routes.handlers.ShowRouteHandlers;
+import com.relativerank.api.routes.handlers.UserRouteHandlers;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -14,10 +17,8 @@ public class Routes {
     RouterFunction<ServerResponse> apiRoutes(UserRouteHandlers userRouteHandlers,
                                              ShowRouteHandlers showRouteHandlers,
                                              ShowListRouteHandlers showListRouteHandlers,
-                                             GlobalRankedShowListRouteHandlers globalRankedShowListRouteHandlers,
-                                             DbMigrater dbMigrater) {
+                                             GlobalRankedShowListRouteHandlers globalRankedShowListRouteHandlers) {
         return RouterFunctions.route()
-                .GET("/migrate", dbMigrater::migrate)
                 .POST("/login", userRouteHandlers::login)
                 .POST("/users", userRouteHandlers::createUser)
                 .PATCH("/users/{username}", userRouteHandlers::updateUser)
