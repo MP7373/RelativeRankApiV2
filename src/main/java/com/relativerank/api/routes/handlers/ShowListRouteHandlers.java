@@ -41,7 +41,7 @@ public record ShowListRouteHandlers(ShowListRepository showListRepository, UserR
         var updatedShowList = serverRequest.body(BodyExtractors.toMono(
                 new ParameterizedTypeReference<List<RankedShow>>() {}));
 
-        return updatedShowList.flatMap(showList -> Mono.zip(userRepository.findByUsername(username), Mono.just(showList)))
+        return updatedShowList.flatMap(showList -> Mono.zip(showListRepository.findByUsername(username), Mono.just(showList)))
                 .flatMap(tuple -> showListRepository.save(new ShowList(
                         tuple.getT1().id(), tuple.getT1().username(), tuple.getT2())))
                 .flatMap(savedShowList -> ServerResponse.ok().body(BodyInserters.fromValue(savedShowList)))
