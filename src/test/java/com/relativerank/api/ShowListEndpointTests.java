@@ -57,14 +57,12 @@ public class ShowListEndpointTests extends EndpointTestsBase {
         var preUpdateRankedShows = Collections.singletonList(preUpdateRankedShow);
         var preUpdateShowList = new ShowList("id", username, preUpdateRankedShows);
 
-        var existingUser = new User("id", username, null, null);
-
         var newListRankedShow1 = new RankedShow("Love Live", 1, 0.666);
         var newListRankedShow2 = new RankedShow("Idoly Pride", 2, 0.333);
         var newRankedShowList = List.of(newListRankedShow1, newListRankedShow2);
         var newShowList = new ShowList(preUpdateShowList.id(), username, newRankedShowList);
 
-        Mockito.when(userRepository.findByUsername(ArgumentMatchers.any())).thenReturn(Mono.just(existingUser));
+        Mockito.when(showListRepository.findByUsername(ArgumentMatchers.any())).thenReturn(Mono.just(preUpdateShowList));
         Mockito.when(showListRepository.save(new ShowList(
                 preUpdateShowList.id(),
                 preUpdateShowList.username(),
@@ -92,13 +90,11 @@ public class ShowListEndpointTests extends EndpointTestsBase {
         var preUpdateRankedShows = Collections.singletonList(preUpdateRankedShow);
         var preUpdateShowList = new ShowList("id", username, preUpdateRankedShows);
 
-        var existingUser = new User("id", username, null, null);
-
         var newListRankedShow1 = new RankedShow("Love Live", 1, 0.7);
         var newListRankedShow2 = new RankedShow("Idoly Pride", 2, 0.2);
         var invalidList = List.of(newListRankedShow1, newListRankedShow2);
 
-        Mockito.when(userRepository.findByUsername(ArgumentMatchers.any())).thenReturn(Mono.just(existingUser));
+        Mockito.when(showListRepository.findByUsername(ArgumentMatchers.any())).thenReturn(Mono.just(preUpdateShowList));
 
         var userJwt = jwtEncoder.encodeUserJwt(username);
         webTestClient.put()
